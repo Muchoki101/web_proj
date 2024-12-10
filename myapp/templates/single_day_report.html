@@ -1,0 +1,156 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Day Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+          crossorigin="anonymous">
+     <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+<div class="card text-center">
+  <div class="card-header">
+    <ul class="nav nav-pills card-header-pills">
+      <li class="nav-item">
+        <a class="nav-link active" href="/sales_form/">Record Sale</a>
+      </li>
+
+        <li class="nav-item">
+        <a class="nav-link" href="/add_expenses/">Record Expense</a>
+      </li>
+
+        <li class="nav-item">
+        <a class="nav-link" href="/view_expenses/">View Expenses</a>
+      </li>
+
+      <li class="nav-item">
+        <a class="nav-link" href="/single_day_report/">Today's visual report</a>
+      </li>
+
+        <li class="nav-item">
+        <a class="nav-link" href="/month_report/">Monthly visual report</a>
+      </li>
+
+         <li class="nav-item">
+        <a class="nav-link" href="/business_performance/">View my profit</a>
+      </li>
+
+    </ul>
+  </div>
+
+<div class="container">
+    <h2>Single Day Report - {{ date }}</h2>
+
+    <!-- Table for Product Sales -->
+    <h3>Product Sales</h3>
+    <table border="1">
+    <thead>
+        <tr>
+            <th>Product Name</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Quantity Sold</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in product_sales %}
+        <tr>
+            <td>{{ product.prod_name }}</td>
+            <td>{{ product.prod_category }}</td>
+            <td>${{ product.prod_price }}</td>
+            <td>{{ product.total_qty }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+
+    <!-- Pie Chart for Categories Sales -->
+    <div class="chart-container">
+        <canvas id="categoryPieChart"></canvas>
+    </div>
+
+</div>
+
+<script>
+    // Prepare data for Pie Chart
+    var categoryLabels = [];
+    var categoryData = [];
+    {% for category in categories_sales %}
+        categoryLabels.push("{{ category.prod_category }}");
+        categoryData.push({{ category.total_qty }});
+    {% endfor %}
+
+    var categoryPieChart = new Chart(document.getElementById('categoryPieChart').getContext('2d'), {
+        type: 'pie',
+        data: {
+            labels: categoryLabels,
+            datasets: [{
+                data: categoryData,
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#FF9800'],
+                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#FF9800']
+            }]
+        }
+    });
+</script>
+
+
+<br><br>
+     {% if user.is_authenticated %}
+    <a class="btn btn-danger" href="{% url 'logout' %}">Log Out</a>
+{% endif %}
+
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous">
+
+</script>
+
+</body>
+</html>

@@ -125,4 +125,8 @@ MEDIA_URL = '/media/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
+LOGIN_URL = '/'
+LOGIN_REDIRECT_URL = '/home/'
+
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
