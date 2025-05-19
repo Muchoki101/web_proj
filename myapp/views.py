@@ -5,12 +5,14 @@ from django.contrib.auth import authenticate, login as auth_login, logout
 from django.contrib.auth.decorators import login_required
 from .models import Product
 from django.db.models import Avg
-from django.db.models import Sum, F, Max
+from django.db.models import Sum, F, Max, FloatField, DecimalField
 from django.utils import timezone
 from datetime import datetime
+from decimal import Decimal
 from .forms import ExpenseForm
 from .models import Product, Expense
 from calendar import monthrange
+from django.db.models.functions import Coalesce
 
 
 
@@ -114,32 +116,36 @@ def delete_product(request, id):
     return redirect('sales_view')
 
 
+from django.db.models import Sum, F, Avg
+
 def visual_report(request):
-    # Restrict to logged-in user's products
-    products = Product.objects.filter(user=request.user).values('prod_name').annotate(
-        total_sales=Sum('prod_qty'),
-        total_sales_value=Sum(F('prod_price') * F('prod_qty'))
-    )
+    # Annotate each product with total sales and total sales value
+    products = Product.objects.filter(user=request.user).annotate(
+        total_sales=Coalesce(Sum('prod_qty'), 0),
+        total_sales_value=Coalesce(
+            Sum(F('prod_price') * F('prod_qty'), output_field=DecimalField()), Decimal('0.0'))
+    ).values('prod_name', 'total_sales', 'total_sales_value')
 
-    # Prepare data for the chart
+    # Extract product names and values
     product_names = [product['prod_name'] for product in products]
-    product_sales = [product['total_sales'] for product in products]
-    product_sales_value = [product['total_sales_value'] for product in products]
+    product_sales_value = [float(product['total_sales_value']) for product in products]
 
-    # Calculate overall metrics
+    # Other metrics
     total_sales = sum(product_sales_value)
     total_products = len(products)
-    avg_price = Product.objects.filter(user=request.user).aggregate(Avg('prod_price'))['prod_price__avg']
+    avg_price = Product.objects.filter(user=request.user).aggregate(
+        avg=Coalesce(Avg('prod_price'), Decimal('0.0'))
+    )['avg']
+
     best_selling_product = Product.objects.filter(user=request.user).order_by('-prod_qty').first()
 
     context = {
         'total_sales': total_sales,
         'total_products': total_products,
-        'avg_price': avg_price,
+        'avg_price': round(float(avg_price), 2),
         'best_selling_product': best_selling_product.prod_name if best_selling_product else 'None',
-        'product_names': product_names,
-        'product_sales': product_sales,
-        'product_sales_value': product_sales_value,
+        'product_names': product_names if product_names else ['No Data'],
+        'product_sales_value': product_sales_value if product_sales_value else [0],
     }
 
     return render(request, 'visual_report.html', context)
